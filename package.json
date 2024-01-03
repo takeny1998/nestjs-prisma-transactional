@@ -18,7 +18,7 @@
     "url": "git+https://github.com/takeny1998/nestjs-prisma-transactional.git"
   },
   "author": "heebeom-yang",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/takeny1998/nestjs-prisma-transactional/issues"
   },
