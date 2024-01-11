@@ -1,14 +1,14 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
-import { TRANSACTIONAL } from './transactional.decorator';
-import { transactionStorage } from './utils/transaction.storage';
+import { Injectable, OnModuleInit } from "@nestjs/common";
+import { DiscoveryService, MetadataScanner, Reflector } from "@nestjs/core";
+import { TRANSACTIONAL } from "./transactional.decorator";
+import { transactionStorage } from "./utils/transaction.storage";
 
 @Injectable()
 export class TransactionExplorer implements OnModuleInit {
   constructor(
     private readonly discoverService: DiscoveryService,
     private readonly metadataScanner: MetadataScanner,
-    private readonly reflector: Reflector,
+    private readonly reflector: Reflector
   ) {}
 
   /**
@@ -39,8 +39,8 @@ export class TransactionExplorer implements OnModuleInit {
   private wrapMethods(method: any, instance: any) {
     // Wrapping the original method with transaction logic.
     return async function (...args: any[]) {
-      return transactionStorage.run({ txClient: null }, async () => {
-        try {
+      try {
+        return transactionStorage.run({ txClient: null }, async () => {
           const result = await method.apply(instance, args);
 
           const store = transactionStorage.getStore();
@@ -50,15 +50,15 @@ export class TransactionExplorer implements OnModuleInit {
           }
 
           return result;
-        } catch (error) {
-          const store = transactionStorage.getStore();
+        });
+      } catch (error) {
+        const store = transactionStorage.getStore();
 
-          if (store?.txClient) {
-            await store.txClient.$rollback();
-          }
-          throw error;
+        if (store?.txClient) {
+          await store.txClient.$rollback();
         }
-      });
+        throw error;
+      }
     };
   }
 
