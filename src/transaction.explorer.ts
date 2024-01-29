@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
 import { DiscoveryService, MetadataScanner, Reflector } from "@nestjs/core";
 import { TRANSACTIONAL } from "./transactional.decorator";
-import { transactionStorage } from "./utils/transaction.storage";
+import { wrapTransaction } from "./utils/wrap-transaction";
 
 @Injectable()
 export class TransactionExplorer implements OnModuleInit {
@@ -31,38 +31,6 @@ export class TransactionExplorer implements OnModuleInit {
   }
 
   /**
-   * Wraps a method with transactional logic.
-   * @param method The original method to wrap.
-   * @param instance The instance of the class containing the method.
-   * @returns The wrapped method.
-   */
-  private wrapMethods(method: any, instance: any) {
-    // Wrapping the original method with transaction logic.
-    return async function (...args: any[]) {
-      try {
-        return transactionStorage.run({ txClient: null }, async () => {
-          const result = await method.apply(instance, args);
-
-          const store = transactionStorage.getStore();
-
-          if (store?.txClient) {
-            await store.txClient.$commit();
-          }
-
-          return result;
-        });
-      } catch (error) {
-        const store = transactionStorage.getStore();
-
-        if (store?.txClient) {
-          await store.txClient.$rollback();
-        }
-        throw error;
-      }
-    };
-  }
-
-  /**
    * Wraps methods annotated with @Transactional.
    */
   wrapDecorators() {
@@ -81,7 +49,7 @@ export class TransactionExplorer implements OnModuleInit {
 
         // Wrap only if the method is annotated with @Transactional.
         if (this.reflector.get(TRANSACTIONAL, method)) {
-          instance[name] = this.wrapMethods(method, instance);
+          instance[name] = wrapTransaction(method, instance);
         }
       });
     });

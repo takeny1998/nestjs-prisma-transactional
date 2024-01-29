@@ -14,11 +14,19 @@ export const txExtension = Prisma.defineExtension((prisma) => {
         }
 
         if (store.txClient === null) {
-          store.txClient = await startTransaction(prisma);
+          const txClient = await startTransaction(prisma);
+          // double-check to prevent overwrite transactionClient
+          // when it runs in parallel. (ex. Promise.all())
+          if (store.txClient === null) {
+            store.txClient = txClient;
+          } else {
+            await txClient.$commit();
+          }
         }
 
         if (model) {
-          return store.txClient[model][operation](args);
+          const result = await (store.txClient as any)[model][operation](args);
+          return result;
         }
 
         if (operation === '$queryRaw') {
@@ -36,7 +44,7 @@ export const txExtension = Prisma.defineExtension((prisma) => {
           return result;
         }
 
-        return store.txClient[operation](args);
+        return (store.txClient as any)[operation](args);
       },
     },
   });
