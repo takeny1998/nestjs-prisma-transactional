@@ -14,7 +14,7 @@ const ROLLBACK_SYMBOL = { [Symbol.for('prisma.client.extension.rollback')]: true
  * @returns {Promise<TransactionalClient>} - A promise that resolves to a transactional client.
  * @throws {Error} - Throws an error if transactions are not supported.
  */
-export const startTransaction = async (prisma: PrismaClient): Promise<TransactionalClient> => {
+export const startTransaction = async (prisma: any): Promise<TransactionalClient> => {
   if (!isTransactionSupported(prisma)) {
     throw new Error('Transactions are not supported by this client');
   }
